@@ -14,6 +14,7 @@ const navLinks = [
   { href: "/chat", label: "Chat" },
   { href: "/decaylog", label: "Decay Log" },
   { href: "/personalities", label: "Possession Roster" }, // Add Personality System
+  { href: "/afterlifefm", label: "afterlife.fm" }, // Added afterlife.fm link
 ];
 
 export default function Navbar() {
