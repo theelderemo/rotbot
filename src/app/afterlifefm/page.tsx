@@ -587,7 +587,7 @@ function FriendsSection({ user }: { user: any }) {
         if (error) setError(error.message);
         if (data) setFriends(data);
       });
-    // Fetch pending requests where the current user is the recipient
+    // Fetch pending requests where the current user is the recipient (notification)
     supabase
       .from('friends')
       .select(`id, user_id, friend_id, status, user_profile:user_id(display_name, avatar_url), friend_profile:friend_id(display_name, avatar_url)`)
