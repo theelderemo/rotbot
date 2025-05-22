@@ -14,6 +14,7 @@ import {
   HandRaisedIcon,
   CameraIcon,
 } from "@heroicons/react/24/outline";
+import { useRouter } from "next/navigation";
 
 const sections = [
   { name: "Newsfeed", icon: HomeIcon },
@@ -152,7 +153,21 @@ function ProfileSection({ userId }: { userId?: string } = {}) {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
+  const [friendStatus, setFriendStatus] = useState<string | null>(null); // 'pending', 'accepted', 'none', 'self'
   const isOwner = !userId || userId === user?.id;
+
+  // Check friend status if viewing another user's profile
+  useEffect(() => {
+    if (!user || isOwner || !userId) return;
+    supabase
+      .from("friends")
+      .select("status")
+      .or(`and(user_id.eq.${user.id},friend_id.eq.${userId}),and(user_id.eq.${userId},friend_id.eq.${user.id})`)
+      .then(({ data }) => {
+        if (data && data.length > 0) setFriendStatus(data[0].status);
+        else setFriendStatus("none");
+      });
+  }, [user, userId, isOwner]);
 
   useEffect(() => {
     const id = userId || user?.id;
@@ -199,8 +214,22 @@ function ProfileSection({ userId }: { userId?: string } = {}) {
     setSaving(false);
   };
 
+  // Add friend request logic
+  const handleAddFriend = async () => {
+    if (!user || !userId) return;
+    setError("");
+    // Prevent duplicate requests
+    if (friendStatus === "pending" || friendStatus === "accepted") return;
+    const { error } = await supabase.from("friends").insert({
+      user_id: user.id,
+      friend_id: userId,
+      status: "pending",
+    });
+    if (error) setError(error.message);
+    else setFriendStatus("pending");
+  };
+
   // Placeholder actions
-  const handleAddFriend = () => alert("Friend request sent!");
   const handleSendMessage = () => alert("Message dialog coming soon!");
   const handleJab = () => alert("You jabbed this user!");
 
@@ -261,12 +290,21 @@ function ProfileSection({ userId }: { userId?: string } = {}) {
         {/* Actions for public profile */}
         {!isOwner && (
           <div className="flex gap-4 mt-2">
-            <button
-              onClick={handleAddFriend}
-              className="flex items-center gap-2 bg-rose-900 hover:bg-rose-800 text-white px-4 py-2 rounded goth-btn"
-            >
-              <UserPlusIcon className="w-5 h-5" /> Add Friend
-            </button>
+            {/* Only show Add Friend if not already friends or pending */}
+            {friendStatus === "none" && (
+              <button
+                onClick={handleAddFriend}
+                className="flex items-center gap-2 bg-rose-900 hover:bg-rose-800 text-white px-4 py-2 rounded goth-btn"
+              >
+                <UserPlusIcon className="w-5 h-5" /> Add Friend
+              </button>
+            )}
+            {friendStatus === "pending" && (
+              <span className="text-xs text-rose-400 px-2 py-1 bg-neutral-900 border border-rose-900 rounded">Friend Request Sent</span>
+            )}
+            {friendStatus === "accepted" && (
+              <span className="text-xs text-green-400 px-2 py-1 bg-neutral-900 border border-green-900 rounded">You are friends</span>
+            )}
             <button
               onClick={handleSendMessage}
               className="flex items-center gap-2 bg-purple-900 hover:bg-purple-800 text-white px-4 py-2 rounded goth-btn"
@@ -808,6 +846,56 @@ function MessagesSection({ user }: { user: any }) {
 export default function AfterlifeFM() {
   const [activeSection, setActiveSection] = useState("Newsfeed");
   const { user } = useSupabaseAuth();
+  const router = useRouter();
+  const [viewedProfileId, setViewedProfileId] = useState<string | undefined>(undefined);
+
+  // If a profile is being viewed, show it
+  if (activeSection === "Profile" && viewedProfileId && viewedProfileId !== user?.id) {
+    return (
+      <div className="flex min-h-screen bg-gradient-to-br from-black via-neutral-900 to-gray-900 text-gray-100 font-mono">
+        <aside className="w-64 bg-gradient-to-b from-neutral-950 to-neutral-900 border-r border-rose-900 shadow-2xl flex flex-col p-6">
+          <h1 className="text-3xl font-black tracking-widest mb-10 text-rose-600 drop-shadow-lg goth-title select-none">
+            afterlife.fm
+          </h1>
+          <nav className="flex flex-col gap-4">
+            {sections.map(({ name, icon: Icon }) => (
+              <button
+                key={name}
+                className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-all goth-nav text-lg font-semibold tracking-wide border border-transparent hover:border-rose-700 hover:bg-rose-950/40 hover:text-rose-400 ${
+                  activeSection === name
+                    ? "bg-rose-950/60 border-rose-700 text-rose-400 shadow-inner"
+                    : "text-gray-300"
+                }`}
+                onClick={() => {
+                  setActiveSection(name);
+                  if (name !== "Profile") setViewedProfileId(undefined);
+                }}
+              >
+                <Icon className="h-6 w-6" />
+                {name}
+              </button>
+            ))}
+          </nav>
+          <div className="mt-auto pt-10 text-xs text-gray-600 opacity-60 goth-footer">
+            <span>Embrace the void.</span>
+          </div>
+        </aside>
+        <main className="flex-1 p-10 relative overflow-y-auto">
+          <div className="pointer-events-none absolute inset-0 opacity-10 bg-[url('/window.svg')] bg-center bg-no-repeat bg-contain" />
+          <section className="relative z-10">
+            <div>
+              <h2 className="text-2xl font-bold mb-6 text-rose-400 goth-section">Profile</h2>
+              <ProfileSection userId={viewedProfileId} />
+              <button className="mt-6 bg-rose-900 hover:bg-rose-800 text-white px-4 py-2 rounded goth-btn" onClick={() => setViewedProfileId(undefined)}>
+                Back to My Profile
+              </button>
+            </div>
+          </section>
+        </main>
+      </div>
+    );
+  }
+
   return (
     <div className="flex min-h-screen bg-gradient-to-br from-black via-neutral-900 to-gray-900 text-gray-100 font-mono">
       {/* Sidebar */}
@@ -824,7 +912,10 @@ export default function AfterlifeFM() {
                   ? "bg-rose-950/60 border-rose-700 text-rose-400 shadow-inner"
                   : "text-gray-300"
               }`}
-              onClick={() => setActiveSection(name)}
+              onClick={() => {
+                setActiveSection(name);
+                if (name !== "Profile") setViewedProfileId(undefined);
+              }}
             >
               <Icon className="h-6 w-6" />
               {name}
@@ -846,7 +937,10 @@ export default function AfterlifeFM() {
               <h2 className="text-2xl font-bold mb-6 text-rose-400 goth-section">
                 Friends
               </h2>
-              <FindUserSection onSelect={(userId) => alert(`Navigate to profile for user: ${userId}`)} />
+              <FindUserSection onSelect={(userId) => {
+                setActiveSection("Profile");
+                setViewedProfileId(userId);
+              }} />
               <FriendsSection user={user} />
             </div>
           )}
