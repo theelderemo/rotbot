@@ -32,6 +32,18 @@ function PersonalitiesClient() {
   const [unlocking, setUnlocking] = useState<string | null>(null);
   const [unlocked, setUnlocked] = useState<string[]>([]);
 
+  // Fetch unlocked personalities for the user
+  async function fetchUnlocked() {
+    if (!user) return;
+    const { data } = await supabase
+      .from("user_personalities")
+      .select("personality_id, personalities(name)")
+      .eq("user_id", user.id);
+    if (data) {
+      setUnlocked(data.map((row: any) => row.personalities.name));
+    }
+  }
+
   useEffect(() => {
     async function fetchPersonalities() {
       const { data, error } = await supabase
@@ -44,18 +56,7 @@ function PersonalitiesClient() {
     fetchPersonalities();
   }, []);
 
-  // Fetch unlocked personalities for the user
   useEffect(() => {
-    async function fetchUnlocked() {
-      if (!user) return;
-      const { data } = await supabase
-        .from("user_personalities")
-        .select("personality_id, personalities(name)")
-        .eq("user_id", user.id);
-      if (data) {
-        setUnlocked(data.map((row: any) => row.personalities.name));
-      }
-    }
     fetchUnlocked();
   }, [user]);
 
@@ -63,19 +64,13 @@ function PersonalitiesClient() {
   useEffect(() => {
     const success = searchParams.get("success");
     const personality = searchParams.get("personality");
-    if (success && personality && user) {
-      // Mark as unlocked in Supabase (in real app, use webhook; here, do it client-side for demo)
-      async function unlock() {
-        const { data: pers } = await supabase.from("personalities").select("id").eq("name", personality).single();
-        if (pers && user) {
-          await supabase.from("user_personalities").insert({ user_id: user.id, personality_id: pers.id });
-          setUnlocked((prev) => [...prev, String(personality)]);
-        }
-      }
-      unlock();
+    if (success && personality) {
+      // Simply clear the search params; webhook will update DB
       router.replace("/personalities");
+      // Refresh unlocked personalities after redirect
+      fetchUnlocked();
     }
-  }, [searchParams, user, router]);
+  }, [searchParams, router]);
 
   async function handleUnlock(name: string) {
     if (!user) return;
