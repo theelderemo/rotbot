@@ -27,6 +27,7 @@ export async function POST(req: NextRequest) {
     const session = event.data.object as Stripe.Checkout.Session;
     const userId = session.metadata?.user_id;
     const personalityName = session.metadata?.personality;
+    console.log("[Webhook] Received checkout.session.completed", { userId, personalityName });
     if (!userId || !personalityName) {
       return NextResponse.json({ error: "Missing metadata." }, { status: 400 });
     }
@@ -37,6 +38,7 @@ export async function POST(req: NextRequest) {
       .eq("name", personalityName)
       .single();
     if (lookupError || !personality) {
+      console.error("[Webhook] Personality lookup error", lookupError);
       return NextResponse.json({ error: "Personality not found." }, { status: 400 });
     }
     // Insert into user_personalities table using personality_id
@@ -44,8 +46,10 @@ export async function POST(req: NextRequest) {
       { user_id: userId, personality_id: personality.id },
     ]);
     if (error) {
-      console.error("Supabase insert error:", error.message);
+      console.error("[Webhook] Supabase insert error:", error.message);
       return NextResponse.json({ error: "Database error." }, { status: 500 });
+    } else {
+      console.log("[Webhook] Successfully inserted user_personalities", { user_id: userId, personality_id: personality.id });
     }
   }
   return NextResponse.json({ received: true });
