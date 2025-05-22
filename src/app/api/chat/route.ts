@@ -2,9 +2,9 @@ import { NextRequest, NextResponse } from "next/server";
 import ModelClient from "@azure-rest/ai-inference";
 import { AzureKeyCredential } from "@azure/core-auth";
 
-const endpoint = process.env.AZURE_INFERENCE_SDK_ENDPOINT || "https://rotbot-resource.services.ai.azure.com/models";
-const modelName = process.env.AZURE_DEPLOYMENT_NAME || "Rotbot";
-const apiKey = process.env.AZURE_INFERENCE_SDK_KEY || "YOUR_KEY_HERE";
+const endpoint = process.env.AZURE_INFERENCE_SDK_ENDPOINT || "https://rotbot-resource.cognitiveservices.azure.com/openai/deployments/rotbot4o/chat/completions?api-version=2025-01-01-preview";
+const modelName = process.env.AZURE_DEPLOYMENT_NAME || "rotbot4o";
+const apiKey = process.env.AZURE_INFERENCE_SDK_KEY || "29HnU4CIt8KfJO0xS4qpVETP3RaSulIjDpypC7Fr32MvYGdiVrihJQQJ99BEACHYHv6XJ3w3AAAAACOGKngm";
 
 export async function POST(req: NextRequest) {
   const { messages } = await req.json();
