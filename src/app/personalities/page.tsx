@@ -35,12 +35,29 @@ function PersonalitiesClient() {
   // Fetch unlocked personalities for the user
   async function fetchUnlocked() {
     if (!user) return;
-    const { data } = await supabase
+    // Get all unlocked personality IDs
+    const { data: unlockedRows } = await supabase
       .from("user_personalities")
-      .select("personality_id, personalities(name)")
+      .select("personality_id")
       .eq("user_id", user.id);
-    if (data) {
-      setUnlocked(data.map((row: any) => row.personalities.name));
+
+    if (unlockedRows && unlockedRows.length > 0) {
+      // Get all personalities
+      const { data: allPersonalities } = await supabase
+        .from("personalities")
+        .select("id, name");
+
+      // Map unlocked IDs to names
+      const unlockedNames = unlockedRows
+        .map((row: any) => {
+          const match = allPersonalities?.find((p: any) => p.id === row.personality_id);
+          return match?.name;
+        })
+        .filter(Boolean);
+
+      setUnlocked(unlockedNames);
+    } else {
+      setUnlocked([]);
     }
   }
 
