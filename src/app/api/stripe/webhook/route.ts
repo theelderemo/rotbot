@@ -30,9 +30,18 @@ export async function POST(req: NextRequest) {
     if (!userId || !personalityName) {
       return NextResponse.json({ error: "Missing metadata." }, { status: 400 });
     }
-    // Insert into user_personalities table
+    // Look up personality by name to get its id
+    const { data: personality, error: lookupError } = await supabase
+      .from("personalities")
+      .select("id")
+      .eq("name", personalityName)
+      .single();
+    if (lookupError || !personality) {
+      return NextResponse.json({ error: "Personality not found." }, { status: 400 });
+    }
+    // Insert into user_personalities table using personality_id
     const { error } = await supabase.from("user_personalities").insert([
-      { user_id: userId, personality: personalityName },
+      { user_id: userId, personality_id: personality.id },
     ]);
     if (error) {
       console.error("Supabase insert error:", error.message);
