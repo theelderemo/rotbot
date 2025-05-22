@@ -2,32 +2,34 @@ import { NextRequest, NextResponse } from "next/server";
 import Stripe from "stripe";
 import { createClient } from "@supabase/supabase-js";
 
-// Use the service_role key for admin actions
-const supabaseServiceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabase = createClient(supabaseUrl, supabaseServiceRoleKey);
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.SUPABASE_SERVICE_ROLE_KEY!
+);
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
   apiVersion: "2025-04-30.basil",
 });
 
+export const runtime = "nodejs";
+
 export async function POST(req: NextRequest) {
   const sig = req.headers.get("stripe-signature");
   const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET!;
+  const body = Buffer.from(await req.arrayBuffer());
+
   let event;
-  const buf = await req.arrayBuffer();
   try {
-    event = stripe.webhooks.constructEvent(Buffer.from(buf), sig!, webhookSecret);
+    event = stripe.webhooks.constructEvent(body, sig!, webhookSecret);
   } catch (err: any) {
-    console.error("Webhook signature verification failed.", err.message);
-    return NextResponse.json({ error: "Invalid signature." }, { status: 400 });
+    console.error("Webhook signature verification failed:", err.message);
+    return NextResponse.json({ error: `Webhook Error: ${err.message}` }, { status: 400 });
   }
 
   if (event.type === "checkout.session.completed") {
     const session = event.data.object as Stripe.Checkout.Session;
     const userId = session.metadata?.user_id;
     const personalityName = session.metadata?.personality;
-    console.log("[Webhook] Received checkout.session.completed", { userId, personalityName });
     if (!userId || !personalityName) {
       return NextResponse.json({ error: "Missing metadata." }, { status: 400 });
     }
@@ -54,9 +56,3 @@ export async function POST(req: NextRequest) {
   }
   return NextResponse.json({ received: true });
 }
-
-export const config = {
-  api: {
-    bodyParser: false,
-  },
-};
