@@ -20,6 +20,9 @@
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "stripe": "^18.1.1"
+    "openai": "latest",
+    "@azure/identity": "latest"
+    
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",
@@ -32,10 +35,5 @@
     "eslint-config-next": "15.3.2",
     "tailwindcss": "^4",
     "typescript": "^5"
-  },
-  "type": "module",
-  "dependencies": {
-    "openai": "latest",
-    "@azure/identity": "latest"
   }
 }
