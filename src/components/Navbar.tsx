@@ -10,11 +10,11 @@ import { useRouter } from "next/navigation";
 import { supabase } from "../lib/supabaseClient";
 
 const navLinks = [
-  { href: "/dashboard", label: "Dashboard" },
-  { href: "/chat", label: "Chat" },
+  { href: "/dashboard", label: "You, Currently" },
+  { href: "/chat", label: "Therapy?" },
   { href: "/decaylog", label: "Decay Log" },
   { href: "/personalities", label: "Possession Roster" }, // Add Personality System
-  { href: "/afterlifefm", label: "afterlife.fm" }, // Added afterlife.fm link
+  { href: "/afterlifefm", label: "afterlife.fm (not alive yet)" }, // Added afterlife.fm link
 ];
 
 export default function Navbar() {
