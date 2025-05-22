@@ -15,7 +15,7 @@ export const runtime = "nodejs";
 
 export async function POST(req: NextRequest) {
   const sig = req.headers.get("stripe-signature");
-  const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET!;
+  const webhookSecret = process.env.WEBHOOK_SIGNING_SECRET!;
   const body = Buffer.from(await req.arrayBuffer());
 
   let event;
