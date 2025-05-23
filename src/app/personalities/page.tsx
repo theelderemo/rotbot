@@ -131,8 +131,6 @@ function PersonalitiesClient() {
                     <>
                       <span className="italic">{LOCKED_TAUNTS[p.name] || "Locked. Pay the toll to unlock this demon."}</span>
                       <button
-                      </span>
-                      <button
                         className="mt-3 bg-rose-800 hover:bg-rose-700 text-rose-100 font-bold py-1 px-4 rounded border border-rose-900 shadow"
                         disabled={unlocking === p.name}
                         onClick={() => handleUnlock(p.name)}
