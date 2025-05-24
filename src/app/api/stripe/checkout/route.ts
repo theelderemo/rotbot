@@ -21,25 +21,17 @@ function getStripeInstance(): Stripe {
   return stripe;
 }
 
-// Map personality name to Stripe price ID (set these in your Stripe dashboard)
-const PERSONALITY_PRICES: Record<string, string> = {
-  "Sad Ghost": process.env.STRIPE_PRICE_SAD_GHOST!,
-  "Goth Auntie": process.env.STRIPE_PRICE_GOTH_AUNTIE!,
-  "Void Lizard": process.env.STRIPE_PRICE_VOID_LIZARD!,
-};
-
 export async function POST(req: NextRequest) {
   try {
-    const stripeInstance = getStripeInstance(); // Get the Stripe instance here, during the request
-
-    const { personalityName, userId } = await req.json();
-    const priceId = PERSONALITY_PRICES[personalityName];
+    const stripeInstance = getStripeInstance();
+    const { userId } = await req.json();
+    // Use a single price ID for the premium subscription
+    const priceId = process.env.STRIPE_PREMIUM_PRICE_ID;
     if (!priceId) {
-      return NextResponse.json({ error: "Invalid personality." }, { status: 400 });
+      return NextResponse.json({ error: "Stripe price ID not configured." }, { status: 500 });
     }
-
     // Create Stripe Checkout session
-    const session = await stripeInstance.checkout.sessions.create({ // Use stripeInstance
+    const session = await stripeInstance.checkout.sessions.create({
       payment_method_types: ["card"],
       line_items: [
         {
@@ -47,19 +39,16 @@ export async function POST(req: NextRequest) {
           quantity: 1,
         },
       ],
-      mode: "payment",
-      success_url: `${process.env.NEXT_PUBLIC_BASE_URL}/personalities?success=1&personality=${encodeURIComponent(personalityName)}`,
+      mode: "subscription",
+      success_url: `${process.env.NEXT_PUBLIC_BASE_URL}/personalities?success=1`,
       cancel_url: `${process.env.NEXT_PUBLIC_BASE_URL}/personalities?canceled=1`,
       metadata: {
         user_id: userId,
-        personality: personalityName,
       },
     });
-
     return NextResponse.json({ url: session.url });
   } catch (error) {
     console.error("Stripe API Error:", error);
-    // Provide a more informative error message in the response
     return NextResponse.json(
       { error: "Failed to create Stripe Checkout session." },
       { status: 500 }

@@ -9,12 +9,20 @@ import { useSupabaseAuth } from "../hooks/SupabaseAuthProvider";
 import { useRouter } from "next/navigation";
 import { supabase } from "../lib/supabaseClient";
 
-const navLinks = [
+// Main nav links (excluding afterlife.fm submenu items)
+const mainNavLinks = [
   { href: "/dashboard", label: "You, Currently" },
   { href: "/chat", label: "Therapy?" },
   { href: "/decaylog", label: "Decay Log" },
-  { href: "/personalities", label: "Possession Roster" }, // Add Personality System
-  { href: "/afterlifefm", label: "afterlife.fm (not alive yet)" }, // Added afterlife.fm link
+  { href: "/personalities", label: "Possession Roster" },
+  { href: "/afterlifefm/newsfeed", label: "afterlife.fm" },
+];
+
+const afterlifeSubLinks = [
+  { href: "/afterlifefm/newsfeed", label: "Newsfeed" },
+  { href: "/afterlifefm/friends", label: "Friends" },
+  { href: "/afterlifefm/messages", label: "Messages" },
+  { href: "/afterlifefm/profile", label: "Profile" },
 ];
 
 export default function Navbar() {
@@ -57,17 +65,38 @@ export default function Navbar() {
         )}
       >
         <ul className="mt-16 space-y-6 p-6">
-          {navLinks.map((link) => (
-            <li key={link.href}>
-              <Link
-                href={link.href}
-                className="block text-lg font-semibold hover:text-rose-400"
-                onClick={() => setOpen(false)}
-              >
-                {link.label}
-              </Link>
-            </li>
-          ))}
+          {mainNavLinks.map((link) =>
+            link.label !== "afterlife.fm" ? (
+              <li key={link.href}>
+                <Link
+                  href={link.href}
+                  className="block text-lg font-semibold hover:text-rose-400"
+                  onClick={() => setOpen(false)}
+                >
+                  {link.label}
+                </Link>
+              </li>
+            ) : (
+              <li key="afterlife-fm">
+                <details>
+                  <summary className="block text-lg font-semibold hover:text-rose-400 cursor-pointer select-none">afterlife.fm</summary>
+                  <ul className="pl-4 mt-2 space-y-2">
+                    {afterlifeSubLinks.map((sublink) => (
+                      <li key={sublink.href}>
+                        <Link
+                          href={sublink.href}
+                          className="block text-base text-neutral-200 hover:bg-neutral-800 hover:text-rose-400 rounded px-2 py-1"
+                          onClick={() => setOpen(false)}
+                        >
+                          {sublink.label}
+                        </Link>
+                      </li>
+                    ))}
+                  </ul>
+                </details>
+              </li>
+            )
+          )}
           {user && (
             <li>
               <button
@@ -80,16 +109,41 @@ export default function Navbar() {
           )}
         </ul>
       </div>
-      <div className="hidden sm:flex space-x-8">
-        {navLinks.map((link) => (
-          <Link
-            key={link.href}
-            href={link.href}
-            className="text-lg font-semibold hover:text-rose-400"
-          >
-            {link.label}
-          </Link>
-        ))}
+      <div className="hidden sm:flex items-center">
+        {mainNavLinks.map((link: { href: string; label: string }) =>
+          link.label !== "afterlife.fm" ? (
+            <Link
+              key={link.href}
+              href={link.href}
+              className="text-lg font-semibold hover:text-rose-400 mx-2"
+            >
+              {link.label}
+            </Link>
+          ) : (
+            <div key="afterlife-fm" className="relative group mx-2">
+              <button
+                className="text-lg font-semibold hover:text-rose-400 focus:outline-none"
+                tabIndex={0}
+              >
+                afterlife.fm
+              </button>
+              <div className="absolute left-0 mt-2 w-40 bg-neutral-900 border border-neutral-800 rounded shadow-lg opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity z-30">
+                <ul className="py-2">
+                  {afterlifeSubLinks.map((sublink: { href: string; label: string }) => (
+                    <li key={sublink.href}>
+                      <Link
+                        href={sublink.href}
+                        className="block px-4 py-2 text-sm text-neutral-200 hover:bg-neutral-800 hover:text-rose-400"
+                      >
+                        {sublink.label}
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </div>
+          )
+        )}
         {user && (
           <button
             onClick={handleSignOut}
