@@ -9,19 +9,18 @@
     "lint": "next lint"
   },
   "dependencies": {
-    "@azure/identity": "latest",
     "@azure-rest/ai-inference": "^1.0.0-beta.6",
     "@azure/core-auth": "^1.9.0",
+    "@azure/identity": "latest",
     "@headlessui/react": "^2.2.4",
     "@heroicons/react": "^2.2.0",
     "@supabase/supabase-js": "^2.49.7",
-    "@types/stripe": "^8.0.416",
     "clsx": "^2.1.1",
     "next": "15.3.2",
+    "openai": "latest",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
-    "stripe": "^18.1.1",
-    "openai": "latest"
+    "stripe": "^18.1.1"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",
@@ -30,6 +29,7 @@
     "@types/node": "^20.17.50",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "@types/stripe": "^8.0.417",
     "eslint": "^9",
     "eslint-config-next": "15.3.2",
     "tailwindcss": "^4",
