@@ -13,9 +13,9 @@ export async function POST(req: NextRequest) {
   const response = await client.path("/chat/completions").post({
     body: {
       messages,
-      max_tokens: 1000,
+      max_tokens: 8192,
       temperature: 0.75,
-      top_p: 0.9,
+      top_p: 0.95,
       presence_penalty: 0,
       frequency_penalty: 0,
       model: modelName,
