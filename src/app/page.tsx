@@ -1,3 +1,4 @@
+// src/app/page.tsx
 import Image from "next/image";
 import Link from "next/link";
 
@@ -6,11 +7,11 @@ export default function Home() {
     <div className="min-h-screen flex flex-col items-center justify-center bg-neutral-950 text-neutral-100 px-4">
       <main className="flex flex-col items-center gap-10 py-20 w-full max-w-2xl">
         <Image
-          src="/vercel.svg"
+          src="/vercel.svg" // Consider updating this to a RotBot specific logo if you have one
           alt="RotBot logo"
           width={80}
           height={80}
-          className="mb-4 dark:invert"
+          className="mb-4 dark:invert" // dark:invert might not be needed if your logo is already themed
           priority
         />
         <h1 className="text-4xl sm:text-5xl font-extrabold text-center tracking-tight mb-2">
@@ -26,7 +27,7 @@ export default function Home() {
         </p>
         <div className="flex flex-col sm:flex-row gap-4 w-full justify-center">
           <Link
-            href="/login"
+            href="/signup" // Changed from /login to /signup for "Get Started"
             className="flex-1 bg-rose-700 hover:bg-rose-800 text-white font-bold py-3 rounded-lg text-center transition-colors"
           >
             Get Started
@@ -36,6 +37,12 @@ export default function Home() {
             className="flex-1 bg-neutral-800 hover:bg-neutral-700 text-white font-bold py-3 rounded-lg text-center transition-colors"
           >
             Login
+          </Link>
+          <Link
+            href="/abyss-info" // New button linking to the features page
+            className="flex-1 bg-neutral-700 hover:bg-neutral-600 text-rose-300 font-bold py-3 rounded-lg text-center transition-colors border border-rose-900 hover:border-rose-700"
+          >
+            Peer Into the Abyss
           </Link>
         </div>
       </main>
