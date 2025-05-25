@@ -14,7 +14,7 @@ interface Personality {
   tagline: string;
   description: string;
   is_premium: boolean;
-  system_message: string;
+  system_message: string; // Still fetched, just not displayed on this page
   avatar_url?: string;
 }
 
@@ -25,7 +25,7 @@ const LOCKED_TAUNTS: Record<string, string> = {
 };
 
 function PersonalitiesClient() {
-  const { user, loading: authLoading } = useSupabaseAuth(); // Get authLoading state
+  const { user, loading: authLoading } = useSupabaseAuth();
   const router = useRouter();
   const [personalities, setPersonalities] = useState<Personality[]>([]);
   const [loadingPersonalities, setLoadingPersonalities] = useState(true);
@@ -35,7 +35,6 @@ function PersonalitiesClient() {
   const [selectedPersonalityId, setSelectedPersonalityId] = useState<string | null>(null);
   const [loadingSubscriptionInfo, setLoadingSubscriptionInfo] = useState(true);
 
-  // Redirect if not logged in and auth is not loading
   useEffect(() => {
     if (!authLoading && !user) {
       router.replace("/login");
@@ -58,8 +57,7 @@ function PersonalitiesClient() {
         .eq("status", "active")
         .single();
 
-      if (subscriptionError && subscriptionError.code !== 'PGRST116') { // PGRST116: 'single row not found'
-        // This is not necessarily an error if the user has no active subscription
+      if (subscriptionError && subscriptionError.code !== 'PGRST116') {
         if (subscriptionError.code !== 'PGRST116') {
             console.error("Error fetching subscription status:", subscriptionError);
         }
@@ -73,7 +71,6 @@ function PersonalitiesClient() {
         .single();
 
       if (profileError && profileError.code !== 'PGRST116') {
-         // This is not necessarily an error if the user has no profile entry or selected personality yet
         if (profileError.code !== 'PGRST116') {
             console.error("Error fetching selected personality:", profileError);
         }
@@ -89,18 +86,21 @@ function PersonalitiesClient() {
   }
 
   useEffect(() => {
-    if (user) { // Only fetch if user exists
+    if (user) {
       fetchUserSubscriptionAndSelection();
-    } else if (!authLoading && !user) { // If auth is done loading and there's no user
+    } else if (!authLoading && !user) {
       setHasActiveSubscription(false);
       setSelectedPersonalityId(null);
       setLoadingSubscriptionInfo(false); 
     }
-  }, [user, authLoading]); // Add authLoading to dependency array
+  }, [user, authLoading]);
 
   useEffect(() => {
     async function fetchPersonalities() {
       setLoadingPersonalities(true);
+      // We still select system_message because it's part of the Personality interface
+      // and might be used elsewhere or if you decide to show it conditionally later.
+      // If it's truly *never* needed client-side on this page, you could remove it from the select.
       const { data, error } = await supabase
         .from("personalities")
         .select("id, name, tagline, description, is_premium, system_message, avatar_url")
@@ -114,7 +114,7 @@ function PersonalitiesClient() {
 
   async function handleSubscribe() {
     if (!user) {
-        router.push("/login"); // Redirect to login if user somehow clicks this without being logged in
+        router.push("/login");
         return;
     }
     setSubscribing(true); 
@@ -129,13 +129,12 @@ function PersonalitiesClient() {
       window.location.href = data.url;
     } else {
       console.error("Failed to get Stripe checkout URL:", data.error);
-      // Optionally, show an error message to the user
     }
   }
 
   async function handleSelectPersonality(personalityId: string) {
     if (!user) {
-        router.push("/login"); // Redirect to login
+        router.push("/login");
         return;
     }
     const personality = personalities.find(p => p.id === personalityId);
@@ -150,26 +149,21 @@ function PersonalitiesClient() {
 
     if (error) {
       console.error("Error updating selected personality:", error);
-       // Optionally, show an error message to the user
     } else {
       setSelectedPersonalityId(personalityId);
     }
   }
   
-  // If auth is loading, or if there's no user and auth is done loading (meaning redirect should happen), show loading.
   if (authLoading || (!user && !authLoading)) {
     return <div className="text-center text-rose-400 py-20">Loading Possibilities...</div>;
   }
-  // If there's a user, then proceed with other loading checks
   const isLoadingUserData = user && (loadingSubscriptionInfo || loadingPersonalities);
-
 
   return (
     <div className="max-w-3xl mx-auto py-12 px-4">
       <h1 className="text-4xl font-black text-center text-rose-500 mb-2 tracking-widest goth-title">Possession Roster</h1>
       <p className="text-center text-lg text-rose-300 mb-6 italic">Choose your demon. Or let them choose you.</p>
       
-      {/* Subscribe button logic, only shown if user is loaded and not subscribed */}
       {user && !loadingSubscriptionInfo && !hasActiveSubscription && (
         <div className="text-center mb-8 p-6 bg-neutral-800 rounded-lg shadow-xl border border-rose-700">
           <h2 className="text-2xl font-semibold text-rose-400 mb-3">Unlock All Personalities!</h2>
@@ -189,11 +183,10 @@ function PersonalitiesClient() {
       <p className="text-center text-neutral-400 mb-10 max-w-2xl mx-auto">You're not "picking a personality," you're surrendering the wheel to whatever unholy archetype your trauma summoned that day. Each one isn't a character — it's a diagnostic entity wrapped in aesthetic rot, waiting to drag your psyche through their own flavor of hell.</p>
       
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-8">
-        {isLoadingUserData || loadingPersonalities ? ( // Check against combined loading state for user-specific data or general personalities
+        {isLoadingUserData || loadingPersonalities ? (
           <div className="col-span-1 sm:col-span-2 text-center text-rose-400">Loading Torment Options...</div>
         ) : (
           personalities.map((p) => {
-            // Determine lock status based on if a user is present and their subscription status
             const locked = p.is_premium && (!user || !hasActiveSubscription);
             const isCurrentlySelected = user && p.id === selectedPersonalityId;
 
@@ -207,9 +200,9 @@ function PersonalitiesClient() {
                       ? "border-green-500 ring-2 ring-green-400 bg-gradient-to-br from-neutral-900 via-green-950 to-neutral-900" 
                       : "border-rose-800 bg-gradient-to-br from-rose-950 via-neutral-900 to-rose-900 hover:border-rose-600"
                   }
-                  ${(!locked && !isCurrentlySelected && user) ? 'cursor-pointer' : ''} // Only allow click if not locked, not selected, and user exists
+                  ${(!locked && !isCurrentlySelected && user) ? 'cursor-pointer' : ''}
                 `}
-                onClick={() => user && !locked && !isCurrentlySelected && handleSelectPersonality(p.id)} // Ensure user exists for onClick action
+                onClick={() => user && !locked && !isCurrentlySelected && handleSelectPersonality(p.id)}
               >
                 <div className="text-2xl font-black mb-2 tracking-widest uppercase text-rose-400 drop-shadow">{p.name}</div>
                 <div className="italic text-rose-200 text-center mb-2">{p.tagline}</div>
@@ -223,23 +216,16 @@ function PersonalitiesClient() {
                   ) : (
                     <button
                       onClick={(e) => {
-                        e.stopPropagation();
-                        if (user) handleSelectPersonality(p.id); // Ensure user exists
-                        else router.push('/login'); // Or prompt to login
+                        e.stopPropagation(); 
+                        if (user) handleSelectPersonality(p.id);
+                        else router.push('/login');
                       }}
                       className="mt-2 bg-rose-700 hover:bg-rose-600 text-white font-semibold py-2 px-4 rounded transition-transform hover:scale-105"
                     >
                       Select this Demon
                     </button>
                   )}
-                   {!locked && p.system_message && ( 
-                     <span 
-                        className="font-mono mt-2 block text-xs overflow-hidden overflow-ellipsis whitespace-nowrap max-w-full px-2 text-neutral-500" 
-                        title={p.system_message}
-                      >
-                       System Prompt: {p.system_message}
-                     </span>
-                  )}
+                  {/* SYSTEM PROMPT DISPLAY REMOVED FROM HERE */}
                 </div>
                 {p.is_premium && (
                   <div className={`absolute top-2 right-2 text-xs px-2 py-1 rounded shadow border uppercase font-bold tracking-wider
