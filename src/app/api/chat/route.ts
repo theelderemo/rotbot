@@ -14,8 +14,8 @@ export async function POST(req: NextRequest) {
     body: {
       messages,
       max_tokens: 1000,
-      temperature: 0.8,
-      top_p: 0.1,
+      temperature: 0.75,
+      top_p: 0.9,
       presence_penalty: 0,
       frequency_penalty: 0,
       model: modelName,
